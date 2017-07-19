@@ -1,0 +1,175 @@
+Baseball History Visualization
+================
+Ignacio Pezo Salazar
+
+``` r
+knitr::opts_chunk$set( message=F, warning=F, fig.width = 10, fig.height = 5 )
+
+library(Lahman)
+library(pander)
+library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
+#library(shiny)
+
+data("Teams")
+dat <- tbl_df(Teams)
+```
+
+Static Graph
+============
+
+``` r
+#after analyzing the dataset to understand its structure, 
+
+#I create a new data set with only the variables I need. 
+dat <- select(dat, yearID, name, SO, G)
+
+#and add the calculated variable
+dat <- mutate(dat, ave.so = SO / G)
+
+#plotting the requested graph
+
+plot.new()
+plot.window(xlim=c(1870, 2016), ylim = c(0, 10))
+title(main="Year data of Strikeouts per game per team", line=0.3, col.main="grey30")
+
+#horizontal lines
+abline(h = seq(1:10), lty=2, col="gray70" )
+
+#x-axis: Year
+axis(side=1, tick = T, line= 0,  at= seq(1870, 2016, by=5), col= "gray40", col.axis="gray40", cex.axis=.7)
+title(xlab="Year", line=2, col.lab="gray30")
+
+#y-axis: Strikeouts
+axis(side=2, tick = T, line= -0.7, at= seq(0, 10, by=1), col= "gray40", col.axis="gray40", cex.axis=.7)
+title(ylab="Strikeouts per game", line=1.5, col.lab="gray30")
+
+#Plotting the average SO  for all teams
+points(x= dat$yearID, y= dat$ave.so, type = "p", cex = 1, pch=20, col=adjustcolor("steelblue4", alpha.f = 0.1))
+
+#because I want the average of all teams in one year, I use the group function and create a new data set (q1) with it
+q1 <- group_by(dat, yearID)
+q1 <- summarise(q1, 
+                ave.so = mean(ave.so, na.rm = T))
+
+#plotting the league average
+points(x= q1$yearID, y= q1$ave.so, type = "o", cex = 1, pch=20, col=adjustcolor("darkred", alpha.f = .6))
+
+
+
+#label League av 1924, adding the line with points and adding the label with text
+points(x= 1924, y = q1$ave.so[q1$yearID == 1924], type = "p", cex = 1.5, pch=1, col="grey60")
+text(x= 1924, y= q1$ave.so[q1$yearID == 1924], labels = "2.7", col= "dodgerblue4", cex=1.2, pos = 1)
+text(x= 1924, y= q1$ave.so[q1$yearID == 1924] - .5, labels = "League average \n 1924", col= "black", cex=.6, pos = 1)
+
+#label League av 2012, adding the line with points and adding the label with text
+points(x= 2012, y = q1$ave.so[q1$yearID == 2012], type = "p", cex = 1.5, pch=1, col="grey60")
+text(x= 2012, y= q1$ave.so[q1$yearID == 2012], labels = "7.5", col= "dodgerblue4", cex=1.2, pos = 3)
+text(x= 2012, y= q1$ave.so[q1$yearID == 2012] + .5, labels = "2012 \n League average", col= "black", cex=.6, pos = 3)
+
+#label 1917, adding the line with points and adding the label with text
+points(x= c(1917,1917), y = c(1, q1$ave.so[q1$yearID == 1917]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1917, y= 1, labels = "U.S. enters \n World War I", col= "gray50", cex=.7, pos = 1)
+
+#label 1946, adding the line with points and adding the label with text
+points(x= c(1946,1946), y = c(1.5, q1$ave.so[q1$yearID == 1946]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1946, y= 1.5, labels = "Players return \n from World War II.", col= "gray50", cex=.7, pos = 1)
+
+#label 1963, adding the line with points and adding the label with text
+points(x= c(1963,1963), y = c(2.5, q1$ave.so[q1$yearID == 1963]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1963, y= 2.5, labels = "Strike zone enlarged \n from 1963-68.", col= "gray50", cex=.7, pos = 1)
+
+#label 1969, adding the line with points and adding the label with text
+points(x= c(1969,1969), y = c(8.5, q1$ave.so[q1$yearID == 1969]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1969, y= 8.5, labels = "Pitching had become so dominant \n in the 1960s that the mound \n was lowered in 1969.", col= "gray50", cex=.7, pos = 3)
+
+#label 1973, adding the line with points and adding the label with text
+points(x= c(1973,1973), y = c(1.5, q1$ave.so[q1$yearID == 1973]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1973, y= 1.5, labels = "Designated hitter \n rule took effect.", col= "gray50", cex=.7, pos = 1)
+
+#label 2008, adding the line with points and adding the label with text
+points(x= c(2008,2008), y = c(3.5, q1$ave.so[q1$yearID == 2008]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 2008, y= 3.5, labels = "Mitchell report \n on steroids.", col= "gray50", cex=.7, pos = 1)
+```
+
+![](Baseball_history_files/figure-markdown_github/unnamed-chunk-2-1.png)
+
+Dynamic Graph using Widget
+==========================
+
+This graph allows the user to select specific teams and make them highlight in the graph.
+
+*note: This code cannot be run in an .md file, so it is not being evaluated*
+
+``` r
+#creting the wiget
+name <- sort(unique(dat$name))
+
+selectInput( inputId ='team', 
+            label ='Select Team', 
+            choices = name,
+            selected = "Chicago White Sox"
+            )
+
+
+renderPlot({
+  
+#Creating the plot canvas
+plot.new()
+plot.window(xlim=c(1870, 2016), ylim = c(0, 10))
+title(main="Year data of Strikeouts per game per team", line=0.3, col.main="grey30")
+abline(h = seq(1:10), lty=2, col="gray70" )
+axis(side=1, tick = T, line= 0,  at= seq(1870, 2016, by=5), col= "gray40", col.axis="gray40", cex.axis=.7)
+title(xlab="Year", line=2, col.lab="gray30")
+axis(side=2, tick = T, line= -0.7, at= seq(0, 10, by=1), col= "gray40", col.axis="gray40", cex.axis=.7)
+title(ylab="Strikeouts per game", line=1.5, col.lab="gray30")
+
+#plotting the teams
+points(x= dat$yearID, y= dat$ave.so, type = "p", cex = 1, pch=20, col=adjustcolor("steelblue4", alpha.f = 0.1))
+
+#plotting the league average
+q1 <- group_by(dat, yearID)
+q1 <- summarise(q1, 
+                ave.so = mean(ave.so, na.rm = T)
+                )
+points(x= q1$yearID, y= q1$ave.so, type = "o", cex = 1, pch=20, col=adjustcolor("darkred", alpha.f = .6))
+
+# highlight one organization
+q2 <- tapply(dat$ave.so[dat$name == input$team], dat$yearID[dat$name == input$team], mean, na.rm = T)
+points(x= names(q2), y= q2, type = "o", cex = 1, pch=20, col="darkgoldenrod3")
+
+#printing labels
+points(x= 1924, y = q1$ave.so[q1$yearID == 1924], type = "p", cex = 1.5, pch=1, col="grey60")
+text(x= 1924, y= q1$ave.so[q1$yearID == 1924], labels = "2.7", col= "dodgerblue4", cex=1.2, pos = 1)
+text(x= 1924, y= q1$ave.so[q1$yearID == 1924] - .5, labels = "League average \n 1924", col= "black", cex=.6, pos = 1)
+points(x= 2012, y = q1$ave.so[q1$yearID == 2012], type = "p", cex = 1.5, pch=1, col="grey60")
+text(x= 2012, y= q1$ave.so[q1$yearID == 2012], labels = "7.5", col= "dodgerblue4", cex=1.2, pos = 3)
+text(x= 2012, y= q1$ave.so[q1$yearID == 2012] + .5, labels = "2012 \n League average", col= "black", cex=.6, pos = 3)
+points(x= c(1917,1917), y = c(1, q1$ave.so[q1$yearID == 1917]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1917, y= 1, labels = "U.S. enters \n World War I", col= "gray50", cex=.7, pos = 1)
+points(x= c(1946,1946), y = c(1.5, q1$ave.so[q1$yearID == 1946]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1946, y= 1.5, labels = "Players return \n from World War II.", col= "gray50", cex=.7, pos = 1)
+points(x= c(1963,1963), y = c(2.5, q1$ave.so[q1$yearID == 1963]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1963, y= 2.5, labels = "Strike zone enlarged \n from 1963-68.", col= "gray50", cex=.7, pos = 1)
+points(x= c(1969,1969), y = c(8.5, q1$ave.so[q1$yearID == 1969]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1969, y= 8.5, labels = "Pitching had become so dominant \n in the 1960s that the mound \n was lowered in 1969.", col= "gray50", cex=.7, pos = 3)
+points(x= c(1973,1973), y = c(1.5, q1$ave.so[q1$yearID == 1973]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 1973, y= 1.5, labels = "Designated hitter \n rule took effect.", col= "gray50", cex=.7, pos = 1)
+points(x= c(2008,2008), y = c(3.5, q1$ave.so[q1$yearID == 2008]), type = "l", cex = 1, pch=20, col=adjustcolor("grey50"))
+text(x= 2008, y= 3.5, labels = "Mitchell report \n on steroids.", col= "gray50", cex=.7, pos = 1)
+
+})
+```
